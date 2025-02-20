@@ -2,12 +2,12 @@
 
 import Foundation
 
-final class Cache<Key: Hashable, Value> {
+public final class Cache<Key: Hashable, Value> {
     private let wrapped = NSCache<WrappedKey, Entry>()
     private let dateProvider: () -> Date
     private let entryLifetime: TimeInterval
     
-    init(dateProvider: @escaping () -> Date = Date.init,
+    public init(dateProvider: @escaping () -> Date = Date.init,
          entryLifetime: TimeInterval = 12 * 60 * 60) {
         self.dateProvider = dateProvider
         self.entryLifetime = entryLifetime
@@ -17,7 +17,7 @@ final class Cache<Key: Hashable, Value> {
     /// - Parameters:
     ///   - value: Value to insert
     ///   - key: Key to use as identifier
-    func insert(_ value: Value, forKey key: Key) {
+    public func insert(_ value: Value, forKey key: Key) {
         let expDate = dateProvider().addingTimeInterval(entryLifetime)
         let entry = Entry(value: value, expirationDate: expDate)
         wrapped.setObject(entry, forKey: WrappedKey(key))
@@ -26,7 +26,7 @@ final class Cache<Key: Hashable, Value> {
     /// Get a value from the cache
     /// - Parameter key: Key to identify a value
     /// - Returns: Value or nil if not found
-    func get(forKey key: Key) -> Value? {
+    public func get(forKey key: Key) -> Value? {
         guard let entry = wrapped.object(forKey: WrappedKey(key)) else {
             return nil
         }
@@ -41,13 +41,13 @@ final class Cache<Key: Hashable, Value> {
     
     /// Removes any existing value from the cache.
     /// - Parameter key: Key to identify the value
-    func remove(forKey key: Key) {
+    public func remove(forKey key: Key) {
         wrapped.removeObject(forKey: WrappedKey(key))
     }
 }
 
 extension Cache {
-    subscript(key: Key) -> Value? {
+    public subscript(key: Key) -> Value? {
         get { return get(forKey: key) }
         set {
             guard let value = newValue else {
@@ -88,7 +88,7 @@ private extension Cache {
         
         init(value: Value, expirationDate: Date) {
             self.value = value
-            self.expirationDate
+            self.expirationDate = expirationDate
         }
     }
 }
