@@ -37,4 +37,44 @@ class SwiftCacheTests {
         cache.remove(forKey: Self.testKey)
         #expect(cache[Self.testKey] == nil)
     }
+    
+    @Test
+    func testCacheThreadSafety() async throws {
+        // unchecked sendable wrapper to make sure that the responsability of thread
+        // safety is on the Cache
+        class SendableWrapper: @unchecked Sendable {
+            let cache = Cache<String, Int>()
+            
+            func get(forKey key: String) -> Int? {
+                cache.get(forKey: key)
+            }
+            
+            func insert(_ value: Int, forKey key: String) {
+                cache.insert(value, forKey: key)
+            }
+            
+            func remove(forKey key: String) {
+                cache.remove(forKey: key)
+            }
+        }
+        
+        let cache = SendableWrapper()
+        let key = "key"
+        let value = 1
+        
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0...10000 {
+                group.addTask {
+                    let r = Int.random(in: 0...2)
+                    switch r {
+                    case 0: let _ = cache.get(forKey: key)
+                    case 1: cache.insert(value, forKey: key)
+                    default: cache.remove(forKey: key)
+                    }
+                }
+            }
+            
+            await group.waitForAll()
+        }
+    }
 }
